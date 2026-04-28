@@ -1,0 +1,1628 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FitAI</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --black:#080808;--white:#f2f0eb;--accent:#c8ff00;--orange:#ff6b35;--blue:#4dc4ff;
+  --mid:#111;--card:#181818;--border:rgba(255,255,255,0.07);--gray:rgba(242,240,235,0.45);
+}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+html,body{height:100%;}
+body{background:var(--black);color:var(--white);font-family:'Noto Sans KR',sans-serif;font-weight:300;overflow:hidden;}
+
+/* ══ ONBOARDING ══ */
+#onboard{
+  position:fixed;inset:0;z-index:999;background:var(--black);
+  display:flex;align-items:center;justify-content:center;
+  overflow-y:auto;
+}
+#onboard::before{
+  content:'';position:fixed;inset:0;
+  background:radial-gradient(ellipse 80% 60% at 50% 0%,rgba(200,255,0,.06) 0%,transparent 70%);
+  pointer-events:none;
+}
+.ob-wrap{
+  width:100%;max-width:520px;padding:4rem 2.5rem;
+  display:flex;flex-direction:column;gap:2.5rem;
+  position:relative;z-index:1;
+}
+
+/* 스텝 인디케이터 */
+.ob-steps{display:flex;gap:.4rem;justify-content:center;}
+.ob-step{width:28px;height:3px;border-radius:99px;background:rgba(255,255,255,.12);transition:all .4s;}
+.ob-step.active{background:var(--accent);width:40px;}
+.ob-step.done{background:rgba(200,255,0,.35);}
+
+/* 스텝 패널 */
+.ob-panel{display:none;flex-direction:column;gap:2rem;animation:fadeUp .5s ease;}
+.ob-panel.show{display:flex;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+
+.ob-eyebrow{font-size:.65rem;letter-spacing:.2em;text-transform:uppercase;color:var(--accent);display:flex;align-items:center;gap:.5rem;}
+.ob-eyebrow::before{content:'';width:16px;height:1px;background:var(--accent);}
+
+.ob-title{font-family:'Bebas Neue',sans-serif;font-size:clamp(3.2rem,7vw,5rem);line-height:1.05;letter-spacing:.02em;}
+.ob-title .ac{color:var(--accent);}
+.ob-title .dim{opacity:.35;}
+
+.ob-joke{
+  background:rgba(200,255,0,.06);border:1px solid rgba(200,255,0,.12);
+  border-radius:12px;padding:1.1rem 1.4rem;
+  font-size:.88rem;color:rgba(242,240,235,.65);line-height:1.8;
+}
+
+/* 성별 선택 */
+.gender-cards{display:grid;grid-template-columns:1fr 1fr;gap:.75rem;}
+.gender-card{
+  padding:1.5rem 1rem;background:var(--card);border:1.5px solid var(--border);
+  border-radius:14px;cursor:pointer;transition:all .25s;
+  display:flex;flex-direction:column;align-items:center;gap:.6rem;
+  font-size:.82rem;color:var(--gray);
+}
+.gender-card:hover{border-color:rgba(200,255,0,.3);color:var(--white);}
+.gender-card.sel{border-color:var(--accent);background:rgba(200,255,0,.07);color:var(--white);}
+.gender-emoji{font-size:2.5rem;}
+.gender-label{font-weight:500;letter-spacing:.04em;}
+
+/* 숫자 입력 */
+.big-input-wrap{display:flex;flex-direction:column;gap:.5rem;}
+.big-input-label{font-size:.68rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gray);}
+.big-input-row{display:flex;align-items:center;gap:1rem;}
+.big-input{
+  flex:1;background:transparent;border:none;border-bottom:2px solid rgba(255,255,255,.15);
+  color:var(--white);font-family:'Bebas Neue',sans-serif;font-size:4rem;
+  outline:none;padding:.25rem 0;transition:border-color .2s;
+  -moz-appearance:textfield;text-align:center;
+}
+.big-input::-webkit-outer-spin-button,.big-input::-webkit-inner-spin-button{-webkit-appearance:none;}
+.big-input:focus{border-bottom-color:var(--accent);}
+.big-unit{font-size:1.2rem;color:var(--gray);font-family:'Bebas Neue',sans-serif;letter-spacing:.05em;}
+
+.range-hint{font-size:.68rem;color:var(--gray);text-align:center;margin-top:.25rem;}
+
+/* 슬라이더 */
+.big-slider{
+  -webkit-appearance:none;width:100%;height:4px;
+  background:rgba(255,255,255,.1);border-radius:99px;outline:none;cursor:pointer;
+}
+.big-slider::-webkit-slider-thumb{
+  -webkit-appearance:none;width:20px;height:20px;border-radius:50%;
+  background:var(--accent);border:3px solid var(--black);
+  box-shadow:0 0 10px rgba(200,255,0,.4);transition:transform .15s;
+}
+.big-slider::-webkit-slider-thumb:hover{transform:scale(1.2);}
+
+/* 나이 특별 처리 */
+.age-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:.5rem;}
+.age-btn{
+  padding:.7rem;background:var(--card);border:1.5px solid var(--border);
+  border-radius:10px;cursor:pointer;font-family:'Noto Sans KR',sans-serif;
+  font-size:.82rem;color:var(--gray);transition:all .2s;text-align:center;
+}
+.age-btn:hover{border-color:rgba(200,255,0,.3);color:var(--white);}
+.age-btn.sel{border-color:var(--accent);background:rgba(200,255,0,.08);color:var(--accent);font-weight:700;}
+
+/* 시작 버튼 */
+.ob-btn{
+  width:100%;padding:1.1rem;background:var(--accent);border:none;border-radius:12px;
+  font-family:'Noto Sans KR',sans-serif;font-weight:700;font-size:.95rem;
+  color:var(--black);cursor:pointer;letter-spacing:.06em;
+  transition:all .2s;display:flex;align-items:center;justify-content:center;gap:.5rem;
+}
+.ob-btn:hover{opacity:.9;transform:translateY(-2px);}
+.ob-btn:disabled{opacity:.35;cursor:not-allowed;transform:none;}
+.ob-btn-ghost{
+  width:100%;padding:.8rem;background:transparent;border:1px solid var(--border);
+  border-radius:12px;font-family:'Noto Sans KR',sans-serif;font-size:.82rem;
+  color:var(--gray);cursor:pointer;transition:all .2s;
+}
+.ob-btn-ghost:hover{border-color:rgba(255,255,255,.2);color:var(--white);}
+
+/* 진행 바 */
+.ob-progress{height:2px;background:var(--border);border-radius:99px;overflow:hidden;}
+.ob-progress-fill{height:100%;background:var(--accent);border-radius:99px;transition:width .5s ease;}
+
+/* ══ MAIN APP ══ */
+#app{display:none;flex-direction:column;height:100vh;}
+#app.show{display:flex;}
+
+nav{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:.85rem 1.5rem;border-bottom:1px solid var(--border);
+  background:rgba(8,8,8,.98);flex-shrink:0;
+}
+.logo{font-family:'Bebas Neue',sans-serif;font-size:1.6rem;letter-spacing:.12em;color:var(--accent);cursor:pointer;}
+.nav-tabs{display:flex;gap:.2rem;}
+.ntab{
+  display:flex;align-items:center;gap:.45rem;padding:.42rem 1.1rem;
+  border-radius:6px;cursor:pointer;font-size:.73rem;color:var(--gray);
+  transition:all .2s;border:none;background:transparent;font-family:'Noto Sans KR',sans-serif;
+}
+.ntab:hover{color:var(--white);background:rgba(255,255,255,.05);}
+.ntab.on{color:var(--white);background:rgba(255,255,255,.08);}
+.tdot{width:5px;height:5px;border-radius:50%;background:rgba(255,255,255,.1);}
+.ntab.on[data-t=codi] .tdot{background:var(--orange);}
+.ntab.on[data-t=size] .tdot{background:var(--blue);}
+.ntab.on[data-t=size] .tdot{background:var(--blue);}
+.nav-profile{
+  display:flex;align-items:center;gap:.75rem;
+  font-size:.72rem;color:var(--gray);cursor:pointer;
+  padding:.3rem .7rem;border-radius:99px;border:1px solid var(--border);
+  transition:all .2s;
+}
+.nav-profile:hover{border-color:rgba(255,255,255,.2);color:var(--white);}
+.np-avatar{
+  width:22px;height:22px;border-radius:50%;background:rgba(200,255,0,.15);
+  display:flex;align-items:center;justify-content:center;font-size:.7rem;
+}
+
+.main{flex:1;display:flex;overflow:hidden;}
+.sidebar{width:390px;border-right:1px solid var(--border);overflow-y:auto;background:var(--mid);flex-shrink:0;}
+.sidebar::-webkit-scrollbar{width:3px;}
+.sidebar::-webkit-scrollbar-thumb{background:var(--border);border-radius:99px;}
+.content{flex:1;overflow-y:auto;background:#0a0a0a;position:relative;}
+.content::-webkit-scrollbar{width:4px;}
+.content::-webkit-scrollbar-thumb{background:var(--border);border-radius:99px;}
+.content::before{content:'';position:fixed;inset:0;pointer-events:none;background-image:linear-gradient(rgba(255,255,255,.016) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.016) 1px,transparent 1px);background-size:55px 55px;z-index:0;}
+
+.sp{display:none;padding:1.5rem;flex-direction:column;gap:1.1rem;}
+.sp.on{display:flex;}
+.cp{display:none;height:100%;flex-direction:column;align-items:center;justify-content:center;padding:2rem;position:relative;z-index:1;overflow:hidden;}
+.cp.on{display:flex;}
+
+/* 공통 */
+.ptitle{font-family:'Bebas Neue',sans-serif;font-size:1.5rem;letter-spacing:.05em;line-height:1;}
+.psub{font-size:.73rem;color:var(--gray);margin-top:.25rem;line-height:1.6;}
+.slbl{font-size:.6rem;letter-spacing:.15em;text-transform:uppercase;margin-bottom:.55rem;display:flex;align-items:center;gap:.5rem;}
+.slbl::after{content:'';flex:1;height:1px;background:var(--border);}
+.slbl.o{color:var(--orange);}.slbl.b{color:var(--blue);}
+.icard{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:1rem;display:flex;flex-direction:column;gap:.8rem;}
+.r2{display:grid;grid-template-columns:1fr 1fr;gap:.6rem;}
+.if{display:flex;flex-direction:column;gap:.28rem;}
+.if label{font-size:.63rem;color:var(--gray);}
+.iw{position:relative;}
+.iw input,.iw select{width:100%;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:7px;padding:.5rem .75rem;color:var(--white);font-family:'Noto Sans KR',sans-serif;font-size:.85rem;outline:none;transition:border-color .2s;}
+.iw input:focus,.iw select:focus{border-color:var(--orange);}
+.iw select option{background:var(--card);}
+.btnp{width:100%;padding:.95rem;border:none;border-radius:9px;font-family:'Noto Sans KR',sans-serif;font-weight:700;font-size:.88rem;cursor:pointer;letter-spacing:.05em;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:.5rem;}
+.btnp:hover:not(:disabled){opacity:.9;transform:translateY(-1px);}
+.btnp:disabled{opacity:.4;cursor:not-allowed;transform:none;}
+.bto{background:var(--orange);color:var(--white);}
+.btb{background:var(--blue);color:var(--black);}
+.btg{width:100%;padding:.75rem;background:transparent;border:1px solid var(--border);border-radius:9px;font-family:'Noto Sans KR',sans-serif;font-size:.78rem;color:var(--gray);cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:.4rem;}
+.btg:hover{border-color:var(--white);color:var(--white);}
+
+/* 체형 요약 카드 */
+.profile-card{
+  background:linear-gradient(135deg,rgba(200,255,0,.07),rgba(200,255,0,.03));
+  border:1px solid rgba(200,255,0,.15);border-radius:12px;padding:1rem 1.25rem;
+}
+.pc-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem;}
+.pc-name{font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);}
+.pc-edit{font-size:.65rem;color:var(--gray);cursor:pointer;border:1px solid var(--border);border-radius:99px;padding:.18rem .6rem;background:transparent;transition:all .2s;}
+.pc-edit:hover{border-color:var(--accent);color:var(--accent);}
+.pc-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:.4rem;}
+.pc-item{display:flex;flex-direction:column;gap:.1rem;}
+.pc-lbl{font-size:.58rem;color:var(--gray);}
+.pc-val{font-size:.9rem;font-weight:700;}
+
+/* 슬롯 */
+.clothes-grid{display:grid;grid-template-columns:1fr 1fr;gap:.65rem;}
+.slot{background:var(--card);border:1.5px dashed rgba(255,255,255,.1);border-radius:11px;overflow:hidden;cursor:pointer;transition:all .2s;position:relative;}
+.slot:hover{border-color:rgba(255,107,53,.4);}
+.slot.on{border-style:solid;border-color:rgba(255,107,53,.3);}
+.slot-prev{aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;overflow:hidden;}
+.slot-em{font-size:2rem;}
+.simg{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;padding:.4rem;display:none;}
+.simg.on{display:block;}
+.slot-ph{display:flex;flex-direction:column;align-items:center;gap:.22rem;}
+.slot-ph.hid{display:none;}
+.slot-ft{padding:.42rem .68rem;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.slot-nm{font-size:.7rem;font-weight:500;}
+.slot-sb{font-size:.58rem;color:var(--gray);}
+.slot-x{width:16px;height:16px;border-radius:50%;background:rgba(255,68,68,.2);border:none;color:#ff6666;font-size:.58rem;cursor:pointer;display:none;align-items:center;justify-content:center;}
+.slot.on .slot-x{display:flex;}
+input[type=file]{display:none;}
+
+/* 옵션 */
+.bg-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:.38rem;}
+.bgo{aspect-ratio:1;border-radius:7px;border:1.5px solid var(--border);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.18rem;font-size:.58rem;color:var(--gray);transition:all .2s;background:rgba(255,255,255,.02);}
+.bgo:hover{border-color:rgba(255,107,53,.4);}
+.bgo.on{border-color:var(--orange);background:rgba(255,107,53,.08);color:var(--orange);}
+
+/* 옷장 리스트 */
+.closet-list{display:flex;flex-direction:column;gap:.45rem;}
+.cl-item-sm{display:flex;align-items:center;gap:.55rem;padding:.5rem;background:rgba(255,255,255,.03);border-radius:8px;border:1px solid var(--border);}
+.cl-thumb-sm{width:36px;height:36px;border-radius:6px;background:rgba(255,255,255,.04);display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;font-size:1.2rem;}
+.cl-thumb-sm img{width:100%;height:100%;object-fit:contain;}
+.cl-info-sm{flex:1;min-width:0;}
+.cl-nm-sm{font-size:.72rem;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.cl-ct-sm{font-size:.6rem;color:var(--gray);}
+.cl-del{width:18px;height:18px;border-radius:50%;background:rgba(255,68,68,.15);border:none;color:#ff6666;font-size:.58rem;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+
+/* 코디 결과 */
+.codi-res{width:100%;max-width:480px;display:flex;flex-direction:column;gap:1.1rem;}
+.codi-iw{border-radius:14px;overflow:hidden;border:1px solid rgba(255,107,53,.2);box-shadow:0 20px 60px rgba(0,0,0,.5);position:relative;}
+.codi-i{width:100%;display:block;}
+.codi-bdg{position:absolute;top:.85rem;right:.85rem;background:rgba(8,8,8,.85);backdrop-filter:blur(8px);border:1px solid rgba(255,107,53,.3);border-radius:99px;padding:.28rem .78rem;font-size:.62rem;color:var(--orange);font-weight:700;letter-spacing:.08em;}
+.codi-acts{display:flex;gap:.5rem;}
+.cact{flex:1;padding:.72rem;border-radius:8px;cursor:pointer;font-family:'Noto Sans KR',sans-serif;font-weight:700;font-size:.72rem;letter-spacing:.05em;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:.3rem;}
+.cact-m{background:var(--orange);border:none;color:var(--white);}
+.cact-m:hover{opacity:.9;}
+.cact-s{background:transparent;border:1px solid var(--border);color:var(--gray);}
+.cact-s:hover{border-color:var(--white);color:var(--white);}
+
+/* 사이즈 */
+.dz{border:1.5px dashed rgba(77,196,255,.25);border-radius:10px;padding:1.8rem 1rem;text-align:center;cursor:pointer;transition:all .2s;position:relative;overflow:hidden;background:rgba(77,196,255,.02);}
+.dz:hover{border-color:rgba(77,196,255,.5);}
+.dz.on{border-style:solid;border-color:rgba(77,196,255,.3);padding:.5rem;}
+.di{font-size:1.8rem;margin-bottom:.4rem;}
+.dt{font-size:.75rem;color:var(--gray);line-height:1.6;}
+.dt span{color:var(--blue);}
+.dp{width:100%;max-height:180px;object-fit:contain;border-radius:8px;display:none;}
+.dp.on{display:block;}
+
+.sz-res{width:100%;max-width:600px;display:flex;flex-direction:column;gap:1.1rem;}
+.sz-tc{background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden;}
+.sz-th{padding:.85rem 1.25rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.sz-tt{font-size:.78rem;font-weight:700;}
+.rec-b{font-size:.65rem;font-weight:700;padding:.25rem .75rem;border-radius:99px;background:rgba(200,255,0,.12);color:var(--accent);}
+table.st{width:100%;border-collapse:collapse;}
+table.st th{font-size:.6rem;letter-spacing:.1em;color:var(--gray);text-align:left;padding:.5rem .85rem;border-bottom:1px solid var(--border);text-transform:uppercase;}
+table.st td{font-size:.78rem;padding:.5rem .85rem;border-bottom:1px solid rgba(255,255,255,.03);}
+table.st tr:last-child td{border-bottom:none;}
+table.st tr.hl td{background:rgba(200,255,0,.05);}
+table.st tr.hl td:first-child{color:var(--accent);font-weight:700;}
+.fok{background:rgba(200,255,0,.12);color:#c8ff00;font-size:.62rem;font-weight:700;padding:.18rem .55rem;border-radius:99px;}
+.fwn{background:rgba(255,149,0,.12);color:#ff9500;font-size:.62rem;font-weight:700;padding:.18rem .55rem;border-radius:99px;}
+.fbd{background:rgba(255,68,68,.12);color:#ff4444;font-size:.62rem;font-weight:700;padding:.18rem .55rem;border-radius:99px;}
+.sz-con{background:rgba(200,255,0,.06);border:1px solid rgba(200,255,0,.15);border-radius:9px;padding:.8rem 1rem;font-size:.78rem;line-height:1.6;}
+
+/* API 바 */
+.api-bar{padding:.55rem 1rem;background:rgba(255,107,53,.05);border-bottom:1px solid rgba(255,107,53,.1);display:flex;align-items:center;gap:.6rem;flex-shrink:0;}
+.api-bar input{flex:1;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:6px;padding:.38rem .7rem;color:var(--white);font-family:monospace;font-size:.75rem;outline:none;}
+.api-bar input:focus{border-color:var(--orange);}
+.api-bar-btn{padding:.38rem .85rem;background:var(--orange);border:none;border-radius:6px;font-family:'Noto Sans KR',sans-serif;font-weight:700;font-size:.7rem;color:var(--white);cursor:pointer;}
+.api-ind{display:flex;align-items:center;gap:.4rem;font-size:.65rem;}
+.aid{width:5px;height:5px;border-radius:50%;background:var(--gray);}
+.aid.ok{background:var(--accent);animation:blink 2s infinite;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.35}}
+
+/* 로딩 */
+.lw{display:flex;flex-direction:column;align-items:center;gap:1.5rem;padding:2rem;}
+.lr{width:70px;height:70px;border:2px solid rgba(255,107,53,.15);border-top-color:var(--orange);border-radius:50%;animation:spin .9s linear infinite;position:relative;}
+.lr.b{border-top-color:var(--blue);}
+.li{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:1.6rem;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.lsteps{display:flex;flex-direction:column;gap:.35rem;text-align:center;}
+.ls{font-size:.73rem;color:rgba(255,255,255,.2);transition:color .3s;}
+.ls.on{color:var(--orange);}
+.ls.dn{color:rgba(255,107,53,.35);}
+
+/* 빈 상태 */
+.ec{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1rem;padding:3rem;text-align:center;width:100%;}
+.ei{font-size:3.5rem;opacity:.2;}
+.et{font-family:'Bebas Neue',sans-serif;font-size:1.6rem;letter-spacing:.05em;opacity:.3;}
+.ed{font-size:.78rem;color:var(--gray);line-height:1.7;max-width:300px;}
+
+/* 토스트 */
+.toast{position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%) translateY(70px);padding:.6rem 1.3rem;border-radius:99px;font-weight:700;font-size:.8rem;transition:transform .3s;z-index:9999;white-space:nowrap;}
+.toast.sh{transform:translateX(-50%) translateY(0);}
+.toast.ok{background:var(--accent);color:var(--black);}
+.toast.er{background:#ff4444;color:var(--white);}
+
+/* 체형 수정 모달 */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(6px);z-index:500;display:none;align-items:center;justify-content:center;}
+.modal-overlay.on{display:flex;}
+.modal{background:var(--mid);border:1px solid var(--border);border-radius:16px;padding:1.75rem;width:min(480px,90vw);display:flex;flex-direction:column;gap:1.1rem;max-height:90vh;overflow-y:auto;}
+.modal-title{font-family:'Bebas Neue',sans-serif;font-size:1.4rem;letter-spacing:.05em;}
+.modal-r2{display:grid;grid-template-columns:1fr 1fr;gap:.65rem;}
+.modal-field{display:flex;flex-direction:column;gap:.3rem;}
+.modal-field label{font-size:.63rem;color:var(--gray);}
+.modal-field input{width:100%;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:8px;padding:.55rem .8rem;color:var(--white);font-family:'Noto Sans KR',sans-serif;font-size:.88rem;outline:none;-moz-appearance:textfield;box-sizing:border-box;}
+.modal-field input::-webkit-outer-spin-button,.modal-field input::-webkit-inner-spin-button{-webkit-appearance:none;}
+.modal-field input:focus{border-color:var(--accent);}
+.modal-btns{display:flex;gap:.6rem;}
+.modal-save{flex:1;padding:.85rem;background:var(--accent);border:none;border-radius:9px;font-family:'Noto Sans KR',sans-serif;font-weight:700;font-size:.85rem;color:var(--black);cursor:pointer;transition:opacity .2s;}
+.modal-save:hover{opacity:.9;}
+.modal-cancel{padding:.85rem 1.2rem;background:transparent;border:1px solid var(--border);border-radius:9px;font-family:'Noto Sans KR',sans-serif;font-size:.82rem;color:var(--gray);cursor:pointer;transition:all .2s;}
+.modal-cancel:hover{border-color:var(--white);color:var(--white);}
+
+/* 옷장 탭 */
+.wardrobe-tab{
+  flex:1;padding:.4rem;background:rgba(255,255,255,.04);
+  border:1px solid var(--border);border-radius:7px;
+  font-family:'Noto Sans KR',sans-serif;font-size:.72rem;color:var(--gray);
+  cursor:pointer;transition:all .2s;
+}
+.wardrobe-tab.on{background:rgba(255,107,53,.12);border-color:rgba(255,107,53,.3);color:var(--orange);}
+.wardrobe-cat{display:flex;flex-direction:column;gap:.35rem;}
+.wcat-label{font-size:.62rem;color:var(--gray);letter-spacing:.08em;padding:.2rem 0;border-bottom:1px solid var(--border);}
+.wcat-items{display:flex;flex-wrap:wrap;gap:.4rem;min-height:32px;padding:.25rem 0;}
+.wcat-empty{font-size:.65rem;color:rgba(242,240,235,.2);padding:.2rem 0;}
+
+/* 옷장 아이템 칩 */
+.wardrobe-chip{
+  display:flex;align-items:center;gap:.35rem;
+  background:rgba(255,255,255,.05);border:1px solid var(--border);
+  border-radius:8px;padding:.3rem .5rem;cursor:pointer;
+  transition:all .2s;position:relative;
+}
+.wardrobe-chip:hover{border-color:rgba(255,107,53,.4);background:rgba(255,107,53,.06);}
+.wardrobe-chip.loaded{border-color:rgba(200,255,0,.3);background:rgba(200,255,0,.06);}
+.wc-thumb{width:28px;height:28px;border-radius:5px;object-fit:contain;background:rgba(255,255,255,.04);}
+.wc-name{font-size:.62rem;color:var(--white);max-width:60px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.wc-del{width:14px;height:14px;border-radius:50%;background:rgba(255,68,68,.2);border:none;color:#ff6666;font-size:.5rem;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+
+/* 코디 리스트 */
+.codi-item{
+  display:flex;align-items:center;gap:.6rem;
+  padding:.5rem;background:rgba(255,255,255,.03);
+  border-radius:8px;border:1px solid var(--border);
+  cursor:pointer;transition:all .2s;
+}
+.codi-item:hover{border-color:rgba(255,107,53,.3);}
+.codi-thumb{width:42px;height:56px;border-radius:6px;object-fit:cover;background:rgba(255,255,255,.04);flex-shrink:0;}
+.codi-info{flex:1;min-width:0;}
+.codi-name{font-size:.72rem;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.codi-items-preview{display:flex;gap:.25rem;margin-top:.2rem;flex-wrap:wrap;}
+.codi-item-tag{font-size:.55rem;background:rgba(255,255,255,.06);border-radius:4px;padding:.1rem .3rem;color:var(--gray);}
+.codi-del{width:18px;height:18px;border-radius:50%;background:rgba(255,68,68,.15);border:none;color:#ff6666;font-size:.6rem;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+
+.m-gbtn{
+  padding:.5rem;background:rgba(255,255,255,.04);border:1px solid var(--border);
+  border-radius:8px;color:var(--gray);font-family:'Noto Sans KR',sans-serif;
+  font-size:.78rem;cursor:pointer;transition:all .2s;
+}
+.m-gbtn.on{background:rgba(200,255,0,.1);border-color:var(--accent);color:var(--accent);}
+.m-agebtn{
+  padding:.35rem .2rem;background:rgba(255,255,255,.04);border:1px solid var(--border);
+  border-radius:6px;color:var(--gray);font-family:'Noto Sans KR',sans-serif;
+  font-size:.7rem;cursor:pointer;transition:all .2s;text-align:center;
+}
+.m-agebtn.on{background:rgba(200,255,0,.1);border-color:var(--accent);color:var(--accent);}
+
+/* 슬롯 저장 버튼 */
+.slot-save-btn{
+  width:20px;height:20px;border-radius:50%;
+  background:rgba(200,255,0,.15);border:none;
+  color:var(--accent);font-size:.6rem;cursor:pointer;
+  display:none;align-items:center;justify-content:center;
+  flex-shrink:0;transition:all .2s;
+}
+.slot.on .slot-save-btn{display:flex;}
+.slot-save-btn:hover{background:rgba(200,255,0,.3);}
+
+/* 이름 수정 인풋 */
+.wc-name-input{
+  background:transparent;border:none;border-bottom:1px solid rgba(200,255,0,.3);
+  color:var(--white);font-family:'Noto Sans KR',sans-serif;
+  font-size:.62rem;outline:none;width:60px;padding:0;
+}
+.wc-name-input:focus{border-bottom-color:var(--accent);}
+
+/* 결과 영역 개선 — 중앙 정렬 + 최대 너비 */
+.codi-res{
+  width:100%;max-width:420px;
+  display:flex;flex-direction:column;gap:.85rem;
+}
+.codi-iw{
+  border-radius:12px;overflow:hidden;
+  border:1px solid rgba(255,107,53,.2);
+  box-shadow:0 12px 40px rgba(0,0,0,.4);
+  position:relative;
+}
+
+/* 아이템 태그 */
+.item-tag{
+  position:absolute;
+  display:flex;align-items:center;gap:.4rem;
+  pointer-events:auto;cursor:default;
+}
+.item-tag.left{ flex-direction:row-reverse; }
+.item-tag-thumb{
+  width:52px;height:52px;border-radius:8px;
+  object-fit:contain;background:rgba(20,20,20,.9);
+  border:1px solid rgba(255,255,255,.12);
+  box-shadow:0 4px 16px rgba(0,0,0,.5);
+  flex-shrink:0;
+}
+.item-tag-line{
+  height:1px;background:rgba(255,255,255,.35);
+  flex:1;min-width:20px;max-width:60px;
+}
+.item-tag-dot{
+  width:7px;height:7px;border-radius:50%;
+  background:var(--white);border:2px solid rgba(255,255,255,.5);
+  flex-shrink:0;
+}
+.item-tag-label{
+  position:absolute;font-size:.55rem;color:rgba(255,255,255,.6);
+  white-space:nowrap;letter-spacing:.04em;
+}
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════ ONBOARDING ══════════════════════ -->
+<div id="onboard">
+<div class="ob-wrap">
+
+  <!-- 진행 표시 -->
+  <div style="display:flex;flex-direction:column;gap:.75rem;">
+    <div class="ob-steps">
+      <div class="ob-step active" id="st0"></div>
+      <div class="ob-step" id="st1"></div>
+      <div class="ob-step" id="st2"></div>
+      <div class="ob-step" id="st3"></div>
+    </div>
+    <div class="ob-progress"><div class="ob-progress-fill" id="ob-prog" style="width:25%"></div></div>
+  </div>
+
+  <!-- STEP 0: 환영 + 성별 -->
+  <div class="ob-panel show" id="ob0">
+    <div>
+      <div class="ob-eyebrow">FitAI 시작하기</div>
+      <h1 class="ob-title">
+        어서오세요<br>
+        <span class="ac">옷장의</span><br>
+        <span class="dim">구원자</span>
+      </h1>
+    </div>
+    <div class="ob-joke">입력하신 정보는 <strong style="color:var(--white)">이 기기에만 저장</strong>되고 어디에도 전송되지 않습니다. 몸무게도, AI도, 저도 절대 발설하지 않아요.</div>
+    <div>
+      <div style="font-size:.72rem;color:var(--gray);margin-bottom:.85rem;letter-spacing:.05em;">성별을 선택해주세요</div>
+      <div class="gender-cards">
+        <div class="gender-card" id="gc-male" onclick="selGender('male')">
+          <div class="gender-emoji">👨</div>
+          <div class="gender-label">남성</div>
+        </div>
+        <div class="gender-card" id="gc-female" onclick="selGender('female')">
+          <div class="gender-emoji">👩</div>
+          <div class="gender-label">여성</div>
+        </div>
+      </div>
+    </div>
+    <button class="ob-btn" id="ob-btn0" onclick="nextStep(1)" disabled>다음 →</button>
+  </div>
+
+  <!-- STEP 1: 키 -->
+  <div class="ob-panel" id="ob1">
+    <div>
+      <div class="ob-eyebrow">Step 1 / 3</div>
+      <h1 class="ob-title">키가<br><span class="ac">얼마나</span><br>되세요?</h1>
+    </div>
+    <div class="ob-joke">솔직하게 입력해주세요. 신발 굽 높이는 빼고요. AI는 속지 않습니다. 옷은 더더욱.</div>
+    <div class="big-input-wrap">
+      <div class="big-input-label">키</div>
+      <div class="big-input-row">
+        <input type="number" class="big-input" id="ob-height" value="170" min="140" max="220" oninput="syncOb('height')">
+        <span class="big-unit">CM</span>
+      </div>
+      <input type="range" class="big-slider" id="ob-height-r" min="140" max="220" value="170" oninput="syncObR('height')">
+      <div class="range-hint">140cm — 220cm</div>
+    </div>
+    <div style="display:flex;gap:.6rem;">
+      <button class="ob-btn-ghost" onclick="nextStep(0)">← 이전</button>
+      <button class="ob-btn" onclick="nextStep(2)">다음 →</button>
+    </div>
+  </div>
+
+  <!-- STEP 2: 몸무게 -->
+  <div class="ob-panel" id="ob2">
+    <div>
+      <div class="ob-eyebrow">Step 2 / 3</div>
+      <h1 class="ob-title">몸무게는<br><span class="ac">얼마나</span><br>나가세요?</h1>
+    </div>
+    <div class="ob-joke">아침에 일어나자마자 잰 몸무게 말고, <strong style="color:var(--white)">지금 이 순간</strong>의 몸무게면 됩니다. 밥 먹은 거 포함해도 괜찮아요.</div>
+    <div class="big-input-wrap">
+      <div class="big-input-label">몸무게</div>
+      <div class="big-input-row">
+        <input type="number" class="big-input" id="ob-weight" value="65" min="30" max="200" oninput="syncOb('weight')">
+        <span class="big-unit">KG</span>
+      </div>
+      <input type="range" class="big-slider" id="ob-weight-r" min="30" max="200" value="65" oninput="syncObR('weight')">
+      <div class="range-hint">30kg — 200kg</div>
+    </div>
+    <div style="display:flex;gap:.6rem;">
+      <button class="ob-btn-ghost" onclick="nextStep(1)">← 이전</button>
+      <button class="ob-btn" onclick="nextStep(3)">다음 →</button>
+    </div>
+  </div>
+
+  <!-- STEP 3: 나이 + 시작 -->
+  <div class="ob-panel" id="ob3">
+    <div>
+      <div class="ob-eyebrow">Step 3 / 3</div>
+      <h1 class="ob-title">나이는<br><span class="ac">어떻게</span><br>되세요?</h1>
+    </div>
+    <div class="ob-joke">나이는 숫자에 불과하지만, 체형 분석에는 필요합니다. 마음의 나이가 아닌 <strong style="color:var(--white)">주민등록상 나이</strong>로 부탁드려요.</div>
+    <div>
+      <div class="age-grid">
+        <div class="age-btn" data-age="10대" onclick="selAge(this)">10대</div>
+        <div class="age-btn" data-age="20대" onclick="selAge(this)">20대</div>
+        <div class="age-btn sel" data-age="30대" onclick="selAge(this)">30대</div>
+        <div class="age-btn" data-age="40대" onclick="selAge(this)">40대</div>
+        <div class="age-btn" data-age="50대" onclick="selAge(this)">50대</div>
+        <div class="age-btn" data-age="60대+" onclick="selAge(this)">60대+</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:.6rem;">
+      <button class="ob-btn-ghost" onclick="nextStep(2)">← 이전</button>
+      <button class="ob-btn" onclick="startApp()" id="start-btn">🚀 FitAI 시작하기</button>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<!-- ══════════════════════ MAIN APP ══════════════════════ -->
+<div id="app">
+
+<nav>
+  <div class="logo">FitAI</div>
+  <div class="nav-tabs">
+    <button class="ntab on" data-t="size" onclick="tab('size')"><div class="tdot"></div>사이즈 매칭</button>
+    <button class="ntab" data-t="codi" onclick="tab('codi')"><div class="tdot"></div>AI 코디</button>
+  </div>
+  <div style="display:flex;align-items:center;gap:.75rem;">
+    <div class="api-ind"><div class="aid" id="aid"></div><span id="aitxt" style="font-size:.65rem;color:var(--gray);">API 미연결</span></div>
+    <div class="nav-profile" onclick="openModal()">
+      <div class="np-avatar" id="nav-avatar">👤</div>
+      <span id="nav-profile-txt">내 체형</span>
+    </div>
+  </div>
+</nav>
+
+<div class="main">
+<div class="sidebar">
+
+  <!-- TAB: AI 코디 -->
+  <div class="sp" id="sp-codi">
+    <div style="margin:-1.5rem -1.5rem 0;">
+      <div class="api-bar">
+        <span style="font-size:.63rem;color:var(--gray);white-space:nowrap;">OpenAI Key</span>
+        <input type="password" id="api-inp" placeholder="sk-...">
+        <button class="api-bar-btn" onclick="saveKey()">저장</button>
+      </div>
+    </div>
+    <div><div class="ptitle">AI 코디</div><div class="psub">옷 이미지를 올리면 AI가 착용 이미지를 생성합니다</div></div>
+
+    <!-- 체형 카드 -->
+    <div class="profile-card">
+      <div class="pc-top">
+        <div class="pc-name">내 체형 자동 반영</div>
+        <button class="pc-edit" onclick="openModal()">수정</button>
+      </div>
+      <div class="pc-grid">
+        <div class="pc-item"><div class="pc-lbl">키</div><div class="pc-val" id="pc-h">—</div></div>
+        <div class="pc-item"><div class="pc-lbl">체중</div><div class="pc-val" id="pc-w">—</div></div>
+        <div class="pc-item"><div class="pc-lbl">성별</div><div class="pc-val" id="pc-g">—</div></div>
+        <div class="pc-item"><div class="pc-lbl">나이</div><div class="pc-val" id="pc-a">—</div></div>
+        <div class="pc-item"><div class="pc-lbl">추천 사이즈</div><div class="pc-val" id="pc-sz" style="color:var(--accent);">—</div></div>
+        <div class="pc-item"><div class="pc-lbl">체형</div><div class="pc-val" id="pc-bt" style="color:var(--accent);">—</div></div>
+      </div>
+    </div>
+
+    <!-- 옷 슬롯 -->
+    <div><div class="slbl o">옷 이미지 업로드</div>
+      <div class="clothes-grid">
+        <div class="slot" id="sl-hat" onclick="trg('hat')"><input type="file" id="fi-hat" accept="image/*" onchange="hsl('hat',this)">
+          <div class="slot-prev"><div class="slot-ph" id="ph-hat"><div class="slot-em">🧢</div><div style="font-size:.56rem;color:var(--gray);">업로드</div></div><img class="simg" id="si-hat"></div>
+          <div class="slot-ft">
+              <div style="flex:1;min-width:0;">
+                <div class="slot-nm">모자</div>
+                <div class="slot-sb" id="sb-hat">선택 안 됨</div>
+              </div>
+              <button class="slot-save-btn" onclick="saveSlotItem(event,'hat')" title="옷장에 저장">💾</button>
+              <button class="slot-x" onclick="cls(event,'hat')">✕</button>
+            </div>
+        </div>
+        <div class="slot" id="sl-top" onclick="trg('top')"><input type="file" id="fi-top" accept="image/*" onchange="hsl('top',this)">
+          <div class="slot-prev"><div class="slot-ph" id="ph-top"><div class="slot-em">👕</div><div style="font-size:.56rem;color:var(--gray);">업로드 *</div></div><img class="simg" id="si-top"></div>
+          <div class="slot-ft">
+              <div style="flex:1;min-width:0;">
+                <div class="slot-nm">상의 *</div>
+                <div class="slot-sb" id="sb-top">선택 안 됨</div>
+              </div>
+              <button class="slot-save-btn" onclick="saveSlotItem(event,'top')" title="옷장에 저장">💾</button>
+              <button class="slot-x" onclick="cls(event,'top')">✕</button>
+            </div>
+        </div>
+        <div class="slot" id="sl-bottom" onclick="trg('bottom')"><input type="file" id="fi-bottom" accept="image/*" onchange="hsl('bottom',this)">
+          <div class="slot-prev"><div class="slot-ph" id="ph-bottom"><div class="slot-em">👖</div><div style="font-size:.56rem;color:var(--gray);">업로드 *</div></div><img class="simg" id="si-bottom"></div>
+          <div class="slot-ft">
+              <div style="flex:1;min-width:0;">
+                <div class="slot-nm">하의 *</div>
+                <div class="slot-sb" id="sb-bottom">선택 안 됨</div>
+              </div>
+              <button class="slot-save-btn" onclick="saveSlotItem(event,'bottom')" title="옷장에 저장">💾</button>
+              <button class="slot-x" onclick="cls(event,'bottom')">✕</button>
+            </div>
+        </div>
+        <div class="slot" id="sl-shoes" onclick="trg('shoes')"><input type="file" id="fi-shoes" accept="image/*" onchange="hsl('shoes',this)">
+          <div class="slot-prev"><div class="slot-ph" id="ph-shoes"><div class="slot-em">👟</div><div style="font-size:.56rem;color:var(--gray);">업로드</div></div><img class="simg" id="si-shoes"></div>
+          <div class="slot-ft">
+              <div style="flex:1;min-width:0;">
+                <div class="slot-nm">신발</div>
+                <div class="slot-sb" id="sb-shoes">선택 안 됨</div>
+              </div>
+              <button class="slot-save-btn" onclick="saveSlotItem(event,'shoes')" title="옷장에 저장">💾</button>
+              <button class="slot-x" onclick="cls(event,'shoes')">✕</button>
+            </div>
+        </div>
+        <div class="slot" id="sl-outer" onclick="trg('outer')"><input type="file" id="fi-outer" accept="image/*" onchange="hsl('outer',this)">
+          <div class="slot-prev"><div class="slot-ph" id="ph-outer"><div class="slot-em">🧥</div><div style="font-size:.56rem;color:var(--gray);">업로드</div></div><img class="simg" id="si-outer"></div>
+          <div class="slot-ft">
+              <div style="flex:1;min-width:0;">
+                <div class="slot-nm">외투</div>
+                <div class="slot-sb" id="sb-outer">선택 안 됨</div>
+              </div>
+              <button class="slot-save-btn" onclick="saveSlotItem(event,'outer')" title="옷장에 저장">💾</button>
+              <button class="slot-x" onclick="cls(event,'outer')">✕</button>
+            </div>
+        </div>
+        <div class="slot" id="sl-bag" onclick="trg('bag')"><input type="file" id="fi-bag" accept="image/*" onchange="hsl('bag',this)">
+          <div class="slot-prev"><div class="slot-ph" id="ph-bag"><div class="slot-em">👜</div><div style="font-size:.56rem;color:var(--gray);">업로드</div></div><img class="simg" id="si-bag"></div>
+          <div class="slot-ft">
+              <div style="flex:1;min-width:0;">
+                <div class="slot-nm">가방</div>
+                <div class="slot-sb" id="sb-bag">선택 안 됨</div>
+              </div>
+              <button class="slot-save-btn" onclick="saveSlotItem(event,'bag')" title="옷장에 저장">💾</button>
+              <button class="slot-x" onclick="cls(event,'bag')">✕</button>
+            </div>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- 옷장 & 코디 탭 -->
+    <div>
+      <div class="slbl o">내 옷장 & 코디</div>
+      <!-- 서브탭 -->
+      <div style="display:flex;gap:.3rem;margin-bottom:.6rem;">
+        <button class="wardrobe-tab on" id="wt-items" onclick="switchWardrobeTab('items')">👗 아이템</button>
+        <button class="wardrobe-tab" id="wt-codi" onclick="switchWardrobeTab('codi')">✨ 코디</button>
+      </div>
+
+      <!-- 아이템 탭 -->
+      <div id="wardrobe-items" class="icard" style="gap:.5rem;">
+        <!-- 카테고리별 -->
+        <div class="wardrobe-cat">
+          <div class="wcat-label">🧢 모자</div>
+          <div class="wcat-items" id="wi-hat"></div>
+        </div>
+        <div class="wardrobe-cat">
+          <div class="wcat-label">👕 상의</div>
+          <div class="wcat-items" id="wi-top"></div>
+        </div>
+        <div class="wardrobe-cat">
+          <div class="wcat-label">👖 하의</div>
+          <div class="wcat-items" id="wi-bottom"></div>
+        </div>
+        <div class="wardrobe-cat">
+          <div class="wcat-label">👟 신발</div>
+          <div class="wcat-items" id="wi-shoes"></div>
+        </div>
+        <div class="wardrobe-cat">
+          <div class="wcat-label">🧥 외투</div>
+          <div class="wcat-items" id="wi-outer"></div>
+        </div>
+        <div class="wardrobe-cat">
+          <div class="wcat-label">👜 가방</div>
+          <div class="wcat-items" id="wi-bag"></div>
+        </div>
+
+      </div>
+
+      <!-- 코디 탭 -->
+      <div id="wardrobe-codi" class="icard" style="gap:.5rem;display:none;">
+        <div id="codi-list"><div style="font-size:.73rem;color:var(--gray);text-align:center;padding:.5rem;">저장된 코디가 없습니다</div></div>
+      </div>
+    </div>
+
+    <div style="padding-bottom:.5rem;">
+      <button class="btnp bto" id="gen-btn" onclick="genCodi()">✨ AI 착용 이미지 생성</button>
+    </div>
+  </div>
+
+  <!-- TAB: 사이즈 매칭 -->
+  <div class="sp on" id="sp-size">
+    <div><div class="ptitle">사이즈 매칭</div><div class="psub">사이즈표 이미지를 올리면 AI가 내 체형에 맞는 사이즈를 찾아줍니다</div></div>
+
+    <!-- 체형 카드 -->
+    <div class="profile-card">
+      <div class="pc-top"><div class="pc-name">내 체형 기준</div><button class="pc-edit" onclick="openModal()">수정</button></div>
+      <div class="pc-grid">
+        <div class="pc-item"><div class="pc-lbl">어깨</div><div class="pc-val" id="sz-s">—</div></div>
+        <div class="pc-item"><div class="pc-lbl">가슴</div><div class="pc-val" id="sz-c">—</div></div>
+        <div class="pc-item"><div class="pc-lbl">허리</div><div class="pc-val" id="sz-wi">—</div></div>
+        <div class="pc-item"><div class="pc-lbl">힙</div><div class="pc-val" id="sz-hip">—</div></div>
+      </div>
+    </div>
+
+    <div><div class="slbl b">사이즈표 이미지</div>
+      <div class="dz" id="sz-dz" onclick="document.getElementById('sz-fi').click()">
+        <input type="file" id="sz-fi" accept="image/*" onchange="hszImg(this)">
+        <div id="sz-dc"><div class="di">🖼️</div><div class="dt">사이즈표를 캡처해서 업로드<br><span>클릭 또는 드래그</span></div></div>
+        <img class="dp" id="sz-prev">
+      </div>
+    </div>
+
+    <div><div class="slbl b">상품 정보</div>
+      <div class="icard">
+        <div class="if"><label>상품명</label><div class="iw"><input type="text" id="zp" placeholder="예: 오버핏 린넨 셔츠" style="border-color:var(--border);"></div></div>
+        <div class="r2">
+          <div class="if"><label>카테고리</label><div class="iw"><select id="zcat" style="border-color:var(--border);"><option>상의</option><option>하의</option><option>아우터</option><option>원피스</option></select></div></div>
+          <div class="if"><label>소재</label><div class="iw"><input type="text" id="zmat" placeholder="면 100%" style="border-color:var(--border);"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <div style="padding-bottom:.5rem;">
+      <button class="btnp btb" id="sz-btn" onclick="anaSize()">🔍 AI 사이즈 분석</button>
+    </div>
+  </div>
+
+</div><!-- /sidebar -->
+
+<div class="content">
+
+  <!-- CP: 코디 결과 -->
+  <div class="cp" id="cp-codi" style="padding:0;align-items:stretch;justify-content:stretch;">
+
+    <!-- 빈 상태 -->
+    <div class="ec" id="ce-codi" style="flex:1;">
+      <div class="ei">✨</div>
+      <div class="et">코디를 완성해보세요</div>
+      <div class="ed">상의+하의 이미지를 올리고<br>생성 버튼을 누르면<br>AI가 착용 이미지를 만들어드립니다</div>
+    </div>
+
+    <!-- 로딩 -->
+    <div class="lw" id="cl-load" style="display:none;flex:1;">
+      <div class="lr"><div class="li">✨</div></div>
+      <div class="lsteps">
+        <div class="ls" id="ll1">체형 정보 적용 중...</div>
+        <div class="ls" id="ll2">옷 이미지 처리 중...</div>
+        <div class="ls" id="ll3">AI 이미지 생성 중...</div>
+        <div class="ls" id="ll4">마무리 중...</div>
+      </div>
+      <div style="font-size:.78rem;color:var(--gray);text-align:center;line-height:1.7;">약 <span style="color:var(--orange);">15~30초</span> 소요됩니다</div>
+    </div>
+
+    <!-- 결과 — 전체 영역 활용 -->
+    <div id="codi-res" style="display:none;flex:1;overflow:hidden;position:relative;">
+
+      <!-- 이미지 + 아이템 태그 -->
+      <div id="codi-canvas" style="position:relative;width:100%;height:100%;display:flex;align-items:center;justify-content:center;">
+        <!-- 생성 이미지 -->
+        <div id="codi-img-wrap" style="position:relative;height:100%;display:flex;align-items:center;justify-content:center;padding:1.5rem;">
+          <img id="codi-img" style="max-height:100%;max-width:none;height:calc(100% - 3rem);width:auto;display:block;border-radius:12px;box-shadow:0 12px 40px rgba(0,0,0,.5);">
+          <div class="codi-bdg" style="position:absolute;top:2rem;right:1rem;">AI Generated</div>
+        </div>
+        <!-- 아이템 태그 오버레이 -->
+        <div id="item-tags" style="position:absolute;inset:0;pointer-events:none;"></div>
+      </div>
+
+      <!-- 하단 액션바 -->
+      <div style="position:absolute;bottom:0;left:0;right:0;padding:1rem 1.5rem;
+        background:linear-gradient(transparent,rgba(8,8,8,.9));
+        display:flex;gap:.6rem;justify-content:center;">
+        <button class="cact cact-m" onclick="dlCodi()">⬇ 저장</button>
+        <button class="cact cact-s" onclick="saveCodi()">👗 코디 저장</button>
+        <button class="cact cact-s" onclick="regen()">🔄 다시</button>
+      </div>
+    </div>
+
+    <!-- 코디 히스토리 (우측 슬라이드) -->
+    <div id="codi-history-panel" style="
+      position:absolute;right:0;top:0;bottom:0;width:200px;
+      background:rgba(8,8,8,.9);backdrop-filter:blur(12px);
+      border-left:1px solid var(--border);padding:1rem;
+      display:flex;flex-direction:column;gap:.6rem;
+      overflow-y:auto;z-index:10;
+      transform:translateX(100%);transition:transform .3s;
+    ">
+      <div style="font-size:.6rem;letter-spacing:.15em;text-transform:uppercase;color:var(--gray);flex-shrink:0;">최근 코디</div>
+      <div id="codi-history" style="display:flex;flex-direction:column;gap:.5rem;"></div>
+    </div>
+
+    <!-- 히스토리 토글 버튼 -->
+    <button id="history-toggle" onclick="toggleHistory()" style="
+      position:absolute;right:0;top:50%;transform:translateY(-50%);
+      background:rgba(255,107,53,.2);border:1px solid rgba(255,107,53,.3);
+      border-right:none;border-radius:6px 0 0 6px;
+      color:var(--orange);font-size:.65rem;padding:.5rem .35rem;
+      cursor:pointer;writing-mode:vertical-rl;letter-spacing:.1em;
+      z-index:11;display:none;
+    ">히스토리</button>
+  </div>
+
+  <!-- CP: 사이즈 결과 -->
+  <div class="cp on" id="cp-size">
+    <div class="ec" id="ce-size">
+      <div class="ei">📐</div>
+      <div class="et">사이즈표를 올려주세요</div>
+      <div class="ed">쇼핑몰 사이즈표를 캡처해서<br>업로드하면 AI가 내 체형과<br>비교 분석합니다</div>
+    </div>
+    <div class="lw" id="sz-load" style="display:none;">
+      <div class="lr b"><div class="li">📐</div></div>
+      <div style="font-size:.78rem;color:var(--gray);text-align:center;line-height:1.7;">사이즈표 분석 중...<br><span style="color:var(--blue);">약 5~10초</span></div>
+    </div>
+    <div class="sz-res" id="sz-res" style="display:none;">
+      <div class="sz-tc">
+        <div class="sz-th"><div class="sz-tt">사이즈별 핏 분석</div><div class="rec-b" id="rec-b">M 추천</div></div>
+        <table class="st"><thead><tr><th>사이즈</th><th>어깨</th><th>가슴</th><th>허리</th><th>힙</th><th>결과</th></tr></thead>
+        <tbody id="sz-tbody"></tbody></table>
+      </div>
+      <div class="sz-con" id="sz-con"></div>
+      <div class="codi-acts">
+        <button class="cact" style="background:var(--blue);border:none;color:var(--black);" onclick="saveSize()">👗 옷장 저장</button>
+        <button class="cact cact-s" onclick="resetSz()">🔄 다시</button>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /content -->
+</div><!-- /main -->
+</div><!-- /app -->
+
+<!-- 체형 수정 모달 -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <div class="modal-title">내 정보 수정</div>
+
+    <!-- 성별 -->
+    <div style="display:flex;flex-direction:column;gap:.3rem;">
+      <div style="font-size:.63rem;color:var(--gray);">성별</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;">
+        <button class="m-gbtn" id="m-male" onclick="mSetGender('male')">👨 남성</button>
+        <button class="m-gbtn" id="m-female" onclick="mSetGender('female')">👩 여성</button>
+      </div>
+    </div>
+
+    <!-- 기본 정보 -->
+    <div class="modal-r2">
+      <div class="modal-field"><label>키</label><input type="number" id="m-height" placeholder="170"><span style="font-size:.62rem;color:var(--gray);">cm</span></div>
+      <div class="modal-field"><label>몸무게</label><input type="number" id="m-weight" placeholder="65"><span style="font-size:.62rem;color:var(--gray);">kg</span></div>
+    </div>
+
+    <!-- 나이 -->
+    <div style="display:flex;flex-direction:column;gap:.3rem;">
+      <div style="font-size:.63rem;color:var(--gray);">나이</div>
+      <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:.3rem;" id="m-age-grid">
+        <button class="m-agebtn" data-age="10대" onclick="mSetAge(this)">10대</button>
+        <button class="m-agebtn" data-age="20대" onclick="mSetAge(this)">20대</button>
+        <button class="m-agebtn" data-age="30대" onclick="mSetAge(this)">30대</button>
+        <button class="m-agebtn" data-age="40대" onclick="mSetAge(this)">40대</button>
+        <button class="m-agebtn" data-age="50대" onclick="mSetAge(this)">50대</button>
+        <button class="m-agebtn" data-age="60대+" onclick="mSetAge(this)">60대+</button>
+      </div>
+    </div>
+
+    <!-- 세부 치수 -->
+    <div style="font-size:.62rem;color:var(--gray);letter-spacing:.08em;text-transform:uppercase;border-top:1px solid var(--border);padding-top:.75rem;">세부 치수 (선택)</div>
+    <div class="modal-r2">
+      <div class="modal-field"><label>어깨 너비</label><input type="number" id="m-shoulder" placeholder="44"><span style="font-size:.62rem;color:var(--gray);">cm</span></div>
+      <div class="modal-field"><label>가슴 둘레</label><input type="number" id="m-chest" placeholder="96"><span style="font-size:.62rem;color:var(--gray);">cm</span></div>
+      <div class="modal-field"><label>허리 둘레</label><input type="number" id="m-waist" placeholder="80"><span style="font-size:.62rem;color:var(--gray);">cm</span></div>
+      <div class="modal-field"><label>힙 둘레</label><input type="number" id="m-hip" placeholder="96"><span style="font-size:.62rem;color:var(--gray);">cm</span></div>
+    </div>
+
+    <div class="modal-btns">
+      <button class="modal-cancel" onclick="closeModal()">취소</button>
+      <button class="modal-save" onclick="saveModal()">저장</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ════ 상태 ════
+let profile = { gender:'male', height:170, weight:65, age:'30대', shoulder:44, chest:96, waist:80, hip:96 };
+let selBg = '실내 흰 벽';
+let slots = { hat:null, top:null, bottom:null, shoes:null, outer:null, bag:null };
+let szImg = null;
+let obStep = 0;
+
+// ════ ONBOARDING ════
+function selGender(g) {
+  profile.gender = g;
+  document.getElementById('gc-male').classList.toggle('sel', g==='male');
+  document.getElementById('gc-female').classList.toggle('sel', g==='female');
+  document.getElementById('ob-btn0').disabled = false;
+}
+
+function syncOb(f) {
+  const val = document.getElementById('ob-'+f).value;
+  document.getElementById('ob-'+f+'-r').value = val;
+  profile[f] = +val;
+}
+function syncObR(f) {
+  const val = document.getElementById('ob-'+f+'-r').value;
+  document.getElementById('ob-'+f).value = val;
+  profile[f] = +val;
+}
+
+function selAge(el) {
+  document.querySelectorAll('.age-btn').forEach(b=>b.classList.remove('sel'));
+  el.classList.add('sel');
+  profile.age = el.dataset.age;
+}
+
+function nextStep(n) {
+  document.getElementById('ob'+obStep).classList.remove('show');
+  obStep = n;
+  document.getElementById('ob'+n).classList.add('show');
+  // 스텝 인디케이터
+  for(let i=0;i<4;i++){
+    const s=document.getElementById('st'+i);
+    s.className='ob-step'+(i<n?' done':i===n?' active':'');
+  }
+  document.getElementById('ob-prog').style.width = ((n+1)/4*100)+'%';
+}
+
+function startApp() {
+  profile.height = +document.getElementById('ob-height').value || 170;
+  profile.weight = +document.getElementById('ob-weight').value || 65;
+  // 기본 체형 추정
+  profile.shoulder = profile.gender==='male' ? Math.round(profile.height*0.252) : Math.round(profile.height*0.228);
+  profile.chest = profile.gender==='male' ? Math.round(profile.height*0.549) : Math.round(profile.height*0.515);
+  profile.waist = profile.gender==='male' ? Math.round(profile.height*0.457) : Math.round(profile.height*0.42);
+  profile.hip = profile.gender==='male' ? Math.round(profile.height*0.549) : Math.round(profile.height*0.548);
+  localStorage.setItem('fitai_profile', JSON.stringify(profile));
+  document.getElementById('onboard').style.opacity='0';
+  document.getElementById('onboard').style.transition='opacity .4s';
+  setTimeout(()=>{
+    document.getElementById('onboard').style.display='none';
+    document.getElementById('app').classList.add('show');
+    refreshProfile();
+    renderCloset();
+    const key=localStorage.getItem('fitai_oai_key');
+    if(key){document.getElementById('api-inp').value=key;setApiInd(true);}
+  },400);
+}
+
+// ════ TAB ════
+function tab(t) {
+  document.querySelectorAll('.ntab').forEach(x=>x.classList.remove('on'));
+  document.querySelectorAll('.sp').forEach(x=>x.classList.remove('on'));
+  document.querySelectorAll('.cp').forEach(x=>x.classList.remove('on'));
+  document.querySelector(`[data-t="${t}"]`).classList.add('on');
+  document.getElementById('sp-'+t).classList.add('on');
+  document.getElementById('cp-'+t).classList.add('on');
+}
+
+// ════ 프로필 ════
+function refreshProfile() {
+  const p = profile;
+  // 추천 사이즈
+  let sz='M'; const s=p.shoulder,c=p.chest;
+  if(p.gender==='male'){if(s<=40&&c<=88)sz='XS';else if(s<=42&&c<=92)sz='S';else if(s<=44&&c<=96)sz='M';else if(s<=46&&c<=100)sz='L';else if(s<=48&&c<=104)sz='XL';else sz='XXL';}
+  else{if(s<=37&&c<=80)sz='XS';else if(s<=39&&c<=84)sz='S';else if(s<=41&&c<=88)sz='M';else if(s<=43&&c<=92)sz='L';else sz='XL';}
+  const r=s/p.hip; let bt='표준형';
+  if(p.gender==='male'){if(r>1.1)bt='역삼각형';else if(r>1.02)bt='직사각형';else if(r<0.9)bt='서양배형';}
+  else{if(p.hip>p.chest+8)bt='서양배형';else if(p.chest>p.hip+4)bt='역삼각형';else if(Math.abs(p.shoulder-p.hip)<4)bt='직사각형';else bt='모래시계형';}
+
+  const gStr=p.gender==='male'?'남성':'여성';
+  document.getElementById('pc-h').textContent=p.height+'cm';
+  document.getElementById('pc-w').textContent=p.weight+'kg';
+  document.getElementById('pc-g').textContent=gStr;
+  document.getElementById('pc-a').textContent=p.age;
+  document.getElementById('pc-sz').textContent=sz;
+  document.getElementById('pc-bt').textContent=bt;
+  document.getElementById('sz-s').textContent=p.shoulder+'cm';
+  document.getElementById('sz-c').textContent=p.chest+'cm';
+  document.getElementById('sz-wi').textContent=p.waist+'cm';
+  document.getElementById('sz-hip').textContent=p.hip+'cm';
+  document.getElementById('nav-avatar').textContent=p.gender==='male'?'👨':'👩';
+  document.getElementById('nav-profile-txt').textContent=gStr+' '+p.height+'cm';
+  // 모달 필드 채우기
+  document.getElementById('m-shoulder').value=p.shoulder;
+  document.getElementById('m-chest').value=p.chest;
+  document.getElementById('m-waist').value=p.waist;
+  document.getElementById('m-hip').value=p.hip;
+}
+
+function openModal(){
+  // 현재 값 채우기
+  document.getElementById('m-height').value = profile.height||'';
+  document.getElementById('m-weight').value = profile.weight||'';
+  document.getElementById('m-shoulder').value = profile.shoulder||'';
+  document.getElementById('m-chest').value = profile.chest||'';
+  document.getElementById('m-waist').value = profile.waist||'';
+  document.getElementById('m-hip').value = profile.hip||'';
+  // 성별 표시
+  mSetGender(profile.gender||'male');
+  // 나이 표시
+  document.querySelectorAll('.m-agebtn').forEach(b=>{
+    b.classList.toggle('on', b.dataset.age===profile.age);
+  });
+  document.getElementById('modal').classList.add('on');
+}
+function mSetGender(g){
+  document.getElementById('m-male').classList.toggle('on', g==='male');
+  document.getElementById('m-female').classList.toggle('on', g==='female');
+  document.getElementById('m-male').dataset.sel = g==='male'?'1':'0';
+  document.getElementById('m-female').dataset.sel = g==='female'?'1':'0';
+}
+function mSetAge(el){
+  document.querySelectorAll('.m-agebtn').forEach(b=>b.classList.remove('on'));
+  el.classList.add('on');
+}
+function closeModal(){document.getElementById('modal').classList.remove('on');}
+function saveModal(){
+  // 기본 정보
+  const h=+document.getElementById('m-height').value;
+  const w=+document.getElementById('m-weight').value;
+  if(h>=140&&h<=220) profile.height=h;
+  if(w>=30&&w<=200) profile.weight=w;
+  // 성별
+  const gMale=document.getElementById('m-male');
+  if(gMale.dataset.sel==='1') profile.gender='male';
+  else profile.gender='female';
+  // 나이
+  const selAge=document.querySelector('.m-agebtn.on');
+  if(selAge) profile.age=selAge.dataset.age;
+  // 세부 치수
+  const s=+document.getElementById('m-shoulder').value;
+  const c=+document.getElementById('m-chest').value;
+  const wi=+document.getElementById('m-waist').value;
+  const hip=+document.getElementById('m-hip').value;
+  if(s>0) profile.shoulder=s;
+  if(c>0) profile.chest=c;
+  if(wi>0) profile.waist=wi;
+  if(hip>0) profile.hip=hip;
+  localStorage.setItem('fitai_profile',JSON.stringify(profile));
+  refreshProfile(); closeModal(); toast('정보가 업데이트됐습니다',true);
+}
+
+// ════ API KEY ════
+function saveKey(){const k=document.getElementById('api-inp').value.trim();if(!k.startsWith('sk-')){toast('올바른 API 키가 아닙니다',false);return;}localStorage.setItem('fitai_oai_key',k);setApiInd(true);toast('API 키 저장됨',true);}
+function setApiInd(ok){document.getElementById('aid').className='aid'+(ok?' ok':'');document.getElementById('aitxt').textContent=ok?'연결됨':'미연결';}
+
+// ════ 슬롯 ════
+function trg(s){document.getElementById('fi-'+s).click();}
+function hsl(s,inp){const f=inp.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{slots[s]={data:e.target.result,name:f.name};const img=document.getElementById('si-'+s);img.src=e.target.result;img.classList.add('on');document.getElementById('ph-'+s).classList.add('hid');document.getElementById('sl-'+s).classList.add('on');document.getElementById('sb-'+s).textContent=f.name.length>10?f.name.slice(0,10)+'...':f.name;};r.readAsDataURL(f);}
+function cls(e,s){e.stopPropagation();slots[s]=null;const img=document.getElementById('si-'+s);img.classList.remove('on');img.src='';document.getElementById('ph-'+s).classList.remove('hid');document.getElementById('sl-'+s).classList.remove('on');document.getElementById('sb-'+s).textContent='선택 안 됨';document.getElementById('fi-'+s).value='';}
+function sbg(el){document.querySelectorAll('.bgo').forEach(b=>b.classList.remove('on'));el.classList.add('on');selBg=el.dataset.bg;}
+
+// ════ CODI 생성 ════
+async function genCodi(){
+  const key=localStorage.getItem('fitai_oai_key');
+  if(!key){toast('API 키를 먼저 입력해주세요',false);return;}
+  if(!slots.top&&!slots.bottom){toast('상의 또는 하의를 최소 1개 업로드해주세요',false);return;}
+  document.getElementById('ce-codi').style.display='none';
+  document.getElementById('codi-res').style.display='none';
+  document.getElementById('cl-load').style.display='flex';
+  document.getElementById('gen-btn').disabled=true;
+  const steps=['ll1','ll2','ll3','ll4'];let si=0;
+  const st=setInterval(()=>{
+    if(si>0){document.getElementById(steps[si-1]).classList.remove('on');document.getElementById(steps[si-1]).classList.add('dn');}
+    if(si<steps.length){document.getElementById(steps[si]).classList.add('on');si++;}
+  },4000);
+
+  const p=profile;
+  const gStr=p.gender==='male'?'male':'female';
+  const quality='medium'; // 고정
+  const extra='';
+
+  const slotOrder=[['hat','hat'],['top','top (shirt/jacket)'],['bottom','bottom (pants/skirt)'],['shoes','shoes'],['outer','outer jacket/coat'],['bag','bag']];
+  const activeSlots=slotOrder.filter(([k])=>slots[k]);
+
+  // 전신 강조 프롬프트
+  const prompt=`A full-body portrait fashion photo of a ${p.age} Korean ${gStr}, ${p.height}cm tall, ${p.weight}kg.
+IMPORTANT: Show the COMPLETE body from head to toe. Include ALL clothing items from the reference images. Nothing should be cropped.
+The person must wear EXACTLY these items from the reference images:
+${activeSlots.map(([,n],i)=>`- Image ${i+1}: ${n} — same color, same design, same texture`).join('\n')}
+Framing: full body shot, entire figure visible from top of head to bottom of shoes.
+Background: clean ${selBg}, simple background to focus on outfit.
+Style: fashion lookbook editorial, photorealistic, high quality.
+Camera: wide enough to show full body with some space above head and below feet.${extra?'\n'+extra:''}`;
+
+  const contentArr = [];
+  for(const [k] of activeSlots){
+    const slot=slots[k];
+    contentArr.push({
+      type: 'input_image',
+      image_url: slot.data
+    });
+  }
+  contentArr.push({ type: 'input_text', text: prompt });
+
+  try{
+    const res=await fetch('https://api.openai.com/v1/responses',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':`Bearer ${key}`},
+      body:JSON.stringify({
+        model:'gpt-4.1',
+        input:[{ role:'user', content: contentArr }],
+        tools:[{
+          type:'image_generation',
+          quality: quality,
+          size:'1024x1536'  // 세로 긴 비율 — 전신 표현에 최적
+        }]
+      })
+    });
+
+    const data=await res.json();
+    clearInterval(st);
+    if(data.error) throw new Error(data.error.message);
+
+    const imgBlock=data.output?.find(o=>o.type==='image_generation_call');
+    if(!imgBlock||!imgBlock.result) throw new Error('이미지 생성 결과 없음');
+
+    const src='data:image/png;base64,'+imgBlock.result;
+    steps.forEach(s=>{document.getElementById(s).classList.remove('on','dn');});
+    setTimeout(()=>{
+      document.getElementById('cl-load').style.display='none';
+      const imgEl = document.getElementById('codi-img');
+      imgEl.onload = () => { setTimeout(renderItemTags, 100); };
+      imgEl.src = src;
+      document.getElementById('codi-res').style.display='flex';
+      document.getElementById('history-toggle').style.display='block';
+      renderCodiHistory();
+    },400);
+
+  }catch(err){
+    clearInterval(st);
+    steps.forEach(s=>{document.getElementById(s).classList.remove('on','dn');});
+    document.getElementById('cl-load').style.display='none';
+    document.getElementById('ce-codi').style.display='flex';
+    let msg='생성 실패: '+(err.message||'오류');
+    if(err.message?.includes('insufficient_quota')) msg='크레딧 부족 — OpenAI 충전 필요';
+    if(err.message?.includes('invalid_api_key')) msg='API 키가 올바르지 않습니다';
+    if(err.message?.includes('verified')) msg='조직 인증 필요 — platform.openai.com 확인';
+    if(err.message?.includes('이미지 생성 결과 없음')) msg='이미지 생성 실패 — 다시 시도해주세요';
+    toast(msg, false);
+  }
+  document.getElementById('gen-btn').disabled=false;
+}
+function dlCodi(){const src=document.getElementById('codi-img').src;const a=document.createElement('a');a.href=src;a.download='fitai-'+Date.now()+'.png';a.click();toast('저장됨',true);}
+
+function regen(){document.getElementById('codi-res').style.display='none';document.getElementById('item-tags').innerHTML='';document.getElementById('ce-codi').style.display='flex';genCodi();}
+
+// ════ 사이즈 ════
+function hszImg(inp){const f=inp.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{szImg=e.target.result;const p=document.getElementById('sz-prev');p.src=szImg;p.classList.add('on');document.getElementById('sz-dz').classList.add('on');document.getElementById('sz-dc').style.display='none';};r.readAsDataURL(f);}
+async function anaSize(){
+  if(!szImg){toast('사이즈표 이미지를 먼저 업로드해주세요',false);return;}
+  document.getElementById('ce-size').style.display='none';document.getElementById('sz-res').style.display='none';document.getElementById('sz-load').style.display='flex';document.getElementById('sz-btn').disabled=true;
+  const p=profile,prod=document.getElementById('zp').value||'상품',cat=document.getElementById('zcat').value,mat=document.getElementById('zmat').value;
+  const prompt=`사이즈표 이미지를 분석해서 아래 체형과 비교하여 JSON만 반환하세요. 마크다운 없이.\n체형: 어깨${p.shoulder}cm, 가슴둘레${p.chest}cm, 허리둘레${p.waist}cm, 힙둘레${p.hip}cm\n상품: ${prod}(${cat},${mat||'소재미상'})\nJSON:\n{"recommended":"M","reason":"이유 한 문장","sizes":[{"size":"S","shoulder":42,"chest":92,"waist":76,"hip":90,"fit":"작음"},{"size":"M","shoulder":44,"chest":96,"waist":80,"hip":96,"fit":"적합"},{"size":"L","shoulder":46,"chest":100,"waist":84,"hip":100,"fit":"약간큼"}]}\nfit: 적합/약간큼/약간작음/큰편/작은편 중 하나`;
+  try{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:800,messages:[{role:'user',content:[{type:'image',source:{type:'base64',media_type:szImg.split(';')[0].split(':')[1],data:szImg.split(',')[1]}},{type:'text',text:prompt}]}]})});
+    const data=await res.json();
+    const raw=data.content?.find(b=>b.type==='text')?.text||'{}';
+    const result=JSON.parse(raw.replace(/```json|```/g,'').trim());
+    document.getElementById('sz-load').style.display='none';
+    renderSz(result);
+  }catch(err){
+    document.getElementById('sz-load').style.display='none';document.getElementById('ce-size').style.display='flex';
+    toast('분석 실패: '+(err.message||'오류'),false);
+  }
+  document.getElementById('sz-btn').disabled=false;
+}
+function renderSz(r){
+  const fm={'적합':'fok','약간큼':'fwn','약간작음':'fwn','큰편':'fbd','작은편':'fbd'};
+  document.getElementById('rec-b').textContent=(r.recommended||'M')+' 추천';
+  const tb=document.getElementById('sz-tbody');tb.innerHTML='';
+  (r.sizes||[]).forEach(s=>{const isR=s.size===r.recommended;const cls=fm[s.fit]||'fwn';tb.innerHTML+=`<tr${isR?' class="hl"':''}><td>${s.size}</td><td>${s.shoulder||'—'}</td><td>${s.chest||'—'}</td><td>${s.waist||'—'}</td><td>${s.hip||'—'}</td><td><span class="${cls}">${s.fit}</span></td></tr>`;});
+  document.getElementById('sz-con').innerHTML=`💡 <strong style="color:var(--accent)">${r.recommended||'M'} 사이즈</strong>가 가장 적합합니다. ${r.reason||''}`;
+  document.getElementById('sz-res').style.display='flex';
+}
+function saveSize(){
+  const prod=document.getElementById('zp').value||'분석한 옷';
+  const rec=document.getElementById('rec-b').textContent;
+  const list=JSON.parse(localStorage.getItem('fitai_codi')||'[]');
+  list.unshift({id:Date.now(),name:prod,type:'size',size:rec,savedAt:new Date().toISOString()});
+  localStorage.setItem('fitai_codi',JSON.stringify(list));
+  renderCloset();toast('옷장에 저장됨 👗',true);
+}
+function resetSz(){szImg=null;document.getElementById('sz-res').style.display='none';document.getElementById('ce-size').style.display='flex';document.getElementById('sz-prev').classList.remove('on');document.getElementById('sz-dz').classList.remove('on');document.getElementById('sz-dc').style.display='block';document.getElementById('sz-fi').value='';}
+
+// ════ 슬롯 개별 저장 ════
+function saveSlotItem(e, cat){
+  e.stopPropagation();
+  const slot = slots[cat];
+  if(!slot){ toast('먼저 이미지를 업로드해주세요',false); return; }
+  const catNames={hat:'모자',top:'상의',bottom:'하의',shoes:'신발',outer:'외투',bag:'가방'};
+  const defaultName = catNames[cat];
+  const name = prompt('아이템 이름을 입력하세요', slot.name?.replace(/\.[^/.]+$/,'') || defaultName);
+  if(name===null) return; // 취소
+  const finalName = name.trim() || defaultName;
+  const wardrobe = JSON.parse(localStorage.getItem('fitai_wardrobe')||'{}');
+  if(!wardrobe[cat]) wardrobe[cat]=[];
+  const isDup = wardrobe[cat].some(i=>i.data===slot.data);
+  if(isDup){ toast('이미 저장된 아이템입니다',false); return; }
+  wardrobe[cat].unshift({id:Date.now()+'_'+cat, name:finalName, data:slot.data, savedAt:new Date().toISOString()});
+  localStorage.setItem('fitai_wardrobe', JSON.stringify(wardrobe));
+  renderWardrobe();
+  toast('"'+finalName+'" 옷장에 저장됐습니다 👗', true);
+}
+
+// ════ 옷장 탭 전환 ════
+function switchWardrobeTab(t){
+  document.querySelectorAll('.wardrobe-tab').forEach(b=>b.classList.remove('on'));
+  document.getElementById('wt-'+t).classList.add('on');
+  document.getElementById('wardrobe-items').style.display=t==='items'?'flex':'none';
+  document.getElementById('wardrobe-codi').style.display=t==='codi'?'flex':'none';
+}
+
+// ════ 옷장 아이템 저장 ════
+function saveCurrentToWardrobe(){
+  const cats={hat:'모자',top:'상의',bottom:'하의',shoes:'신발',outer:'외투',bag:'가방'};
+  let saved=0;
+  Object.entries(slots).forEach(([k,v])=>{
+    if(!v) return;
+    const wardrobe=JSON.parse(localStorage.getItem('fitai_wardrobe')||'{}');
+    if(!wardrobe[k]) wardrobe[k]=[];
+    const isDup=wardrobe[k].some(i=>i.data===v.data);
+    if(!isDup){
+      wardrobe[k].unshift({id:Date.now()+'_'+k,name:v.name||cats[k],data:v.data,savedAt:new Date().toISOString()});
+      saved++;
+    }
+    localStorage.setItem('fitai_wardrobe',JSON.stringify(wardrobe));
+  });
+  if(saved>0){renderWardrobe();toast(saved+'개 아이템을 옷장에 저장했습니다 👗',true);}
+  else toast('이미 저장됐거나 업로드된 이미지가 없습니다',false);
+}
+
+// ════ 옷장 렌더 ════
+function renderWardrobe(){
+  const wardrobe=JSON.parse(localStorage.getItem('fitai_wardrobe')||'{}');
+  const cats={hat:'wi-hat',top:'wi-top',bottom:'wi-bottom',shoes:'wi-shoes',outer:'wi-outer',bag:'wi-bag'};
+  Object.entries(cats).forEach(([k,elId])=>{
+    const el=document.getElementById(elId);
+    if(!el) return;
+    const items=wardrobe[k]||[];
+    if(items.length===0){el.innerHTML='<span class="wcat-empty">비어있음</span>';return;}
+    el.innerHTML=items.map(item=>`
+      <div class="wardrobe-chip ${slots[k]&&slots[k].data===item.data?'loaded':''}"
+        title="클릭하면 슬롯에 불러오기">
+        <img class="wc-thumb" src="${item.data}" alt="" onclick="loadFromWardrobe('${k}','${item.id}')">
+        <input class="wc-name-input" value="${item.name}"
+          onchange="renameWardrobeItem('${k}','${item.id}',this.value)"
+          onclick="event.stopPropagation()" title="이름 수정 가능">
+        <button class="wc-del" onclick="event.stopPropagation();delWardrobeItem('${k}','${item.id}')">✕</button>
+      </div>`).join('');
+  });
+}
+
+// 옷장 아이템 → 슬롯 불러오기
+function loadFromWardrobe(cat,itemId){
+  const wardrobe=JSON.parse(localStorage.getItem('fitai_wardrobe')||'{}');
+  const item=(wardrobe[cat]||[]).find(i=>i.id===itemId);
+  if(!item) return;
+  slots[cat]={data:item.data,name:item.name};
+  const img=document.getElementById('si-'+cat);
+  img.src=item.data;img.classList.add('on');
+  document.getElementById('ph-'+cat).classList.add('hid');
+  document.getElementById('sl-'+cat).classList.add('on');
+  document.getElementById('sb-'+cat).textContent=item.name.length>10?item.name.slice(0,10)+'...':item.name;
+  renderWardrobe();
+  toast(item.name+' 슬롯에 불러왔습니다',true);
+}
+
+// 옷장 아이템 이름 수정
+function renameWardrobeItem(cat, itemId, newName){
+  if(!newName.trim()) return;
+  const wardrobe=JSON.parse(localStorage.getItem('fitai_wardrobe')||'{}');
+  if(!wardrobe[cat]) return;
+  const item=wardrobe[cat].find(i=>i.id===itemId);
+  if(!item) return;
+  item.name=newName.trim();
+  localStorage.setItem('fitai_wardrobe',JSON.stringify(wardrobe));
+  // slots에도 반영
+  if(slots[cat]&&slots[cat].data===item.data) slots[cat].name=item.name;
+}
+
+// 옷장 아이템 삭제
+function delWardrobeItem(cat,itemId){
+  const wardrobe=JSON.parse(localStorage.getItem('fitai_wardrobe')||'{}');
+  if(!wardrobe[cat]) return;
+  wardrobe[cat]=wardrobe[cat].filter(i=>i.id!==itemId);
+  localStorage.setItem('fitai_wardrobe',JSON.stringify(wardrobe));
+  renderWardrobe();toast('삭제됐습니다',true);
+}
+
+// ════ 코디 저장/불러오기 ════
+function renderCodiList(){
+  const list=JSON.parse(localStorage.getItem('fitai_codibook')||'[]');
+  const el=document.getElementById('codi-list');
+  if(!el) return;
+  if(list.length===0){el.innerHTML='<div style="font-size:.73rem;color:var(--gray);text-align:center;padding:.5rem;">저장된 코디가 없습니다</div>';return;}
+  el.innerHTML=list.map((c,i)=>`
+    <div class="codi-item" onclick="loadCodi(${i})">
+      <img class="codi-thumb" src="${c.resultImg||''}" alt="">
+      <div class="codi-info">
+        <div class="codi-name">${c.name}</div>
+        <div class="codi-items-preview">
+          ${Object.entries(c.items||{}).filter(([,v])=>v).map(([k])=>({hat:'🧢',top:'👕',bottom:'👖',shoes:'👟'}[k]||'').toString()).map(e=>`<span class="codi-item-tag">${e}</span>`).join('')}
+        </div>
+      </div>
+      <button class="codi-del" onclick="event.stopPropagation();delCodi(${i})">✕</button>
+    </div>`).join('');
+}
+
+function saveCodi(){
+  const src=document.getElementById('codi-img').src;
+  if(!src||src===window.location.href) return;
+  const name='코디 '+new Date().toLocaleDateString('ko');
+  const codiItems={};
+  Object.entries(slots).forEach(([k,v])=>{if(v) codiItems[k]={name:v.name,data:v.data};});
+  const list=JSON.parse(localStorage.getItem('fitai_codibook')||'[]');
+  list.unshift({id:Date.now(),name,items:codiItems,resultImg:src,savedAt:new Date().toISOString()});
+  localStorage.setItem('fitai_codibook',JSON.stringify(list));
+  renderCodiList();
+  renderCodiHistory();
+  switchWardrobeTab('codi');
+  toast('코디가 저장됐습니다 ✨',true);
+}
+
+function loadCodi(i){
+  const list=JSON.parse(localStorage.getItem('fitai_codibook')||'[]');
+  const codi=list[i];if(!codi) return;
+  Object.entries(codi.items||{}).forEach(([k,v])=>{
+    if(!v) return;
+    slots[k]={data:v.data,name:v.name};
+    const img=document.getElementById('si-'+k);
+    img.src=v.data;img.classList.add('on');
+    document.getElementById('ph-'+k).classList.add('hid');
+    document.getElementById('sl-'+k).classList.add('on');
+    document.getElementById('sb-'+k).textContent=v.name.length>10?v.name.slice(0,10)+'...':v.name;
+  });
+  if(codi.resultImg){
+    document.getElementById('codi-img').src=codi.resultImg;
+    document.getElementById('codi-res').style.display='flex';
+    document.getElementById('ce-codi').style.display='none';
+  }
+  renderWardrobe();
+  toast(codi.name+' 불러왔습니다',true);
+}
+
+function delCodi(i){
+  const list=JSON.parse(localStorage.getItem('fitai_codibook')||'[]');
+  list.splice(i,1);
+  localStorage.setItem('fitai_codibook',JSON.stringify(list));
+  renderCodiList();toast('삭제됐습니다',true);
+}
+
+// ════ 코디 히스토리 (우측 패널) ════
+function renderCodiHistory(){
+  const el=document.getElementById('codi-history');
+  if(!el) return;
+  const list=JSON.parse(localStorage.getItem('fitai_codibook')||'[]');
+  if(list.length===0){
+    el.innerHTML='<div style="font-size:.72rem;color:rgba(242,240,235,.2);text-align:center;padding:1rem;">저장된 코디가 없습니다</div>';
+    return;
+  }
+  el.innerHTML=list.slice(0,6).map((c,i)=>`
+    <div onclick="loadCodi(${i})" style="display:flex;gap:.6rem;align-items:center;
+      padding:.6rem;background:rgba(255,255,255,.03);border:1px solid var(--border);
+      border-radius:9px;cursor:pointer;transition:all .2s;"
+      onmouseover="this.style.borderColor='rgba(255,107,53,.3)'"
+      onmouseout="this.style.borderColor='var(--border)'">
+      <img style="width:48px;height:64px;border-radius:6px;object-fit:cover;flex-shrink:0;background:rgba(255,255,255,.04);"
+        src="${c.resultImg||''}" alt="">
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:.72rem;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${c.name}</div>
+        <div style="display:flex;gap:.2rem;margin-top:.25rem;flex-wrap:wrap;">
+          ${Object.keys(c.items||{}).map(k=>({hat:'🧢',top:'👕',bottom:'👖',shoes:'👟',outer:'🧥',bag:'👜'}[k]||'').toString()).filter(Boolean).map(e=>`<span style="font-size:.7rem;">${e}</span>`).join('')}
+        </div>
+        <div style="font-size:.6rem;color:var(--gray);margin-top:.2rem;">${new Date(c.savedAt).toLocaleDateString('ko')}</div>
+      </div>
+    </div>`).join('');
+}
+
+// ════ 아이템 태그 렌더 ════
+function renderItemTags(){
+  const wrap = document.getElementById('item-tags');
+  const imgEl = document.getElementById('codi-img');
+  if(!wrap||!imgEl) return;
+  wrap.innerHTML = '';
+
+  const activeItems = Object.entries(slots).filter(([,v])=>v);
+  if(activeItems.length === 0) return;
+
+  const imgRect    = imgEl.getBoundingClientRect();
+  const canvasRect = document.getElementById('codi-canvas').getBoundingClientRect();
+  const iLeft = imgRect.left - canvasRect.left;
+  const iTop  = imgRect.top  - canvasRect.top;
+  const iW    = imgRect.width;
+  const iH    = imgRect.height;
+
+  const catNames = {hat:'모자',top:'상의',bottom:'하의',shoes:'신발',outer:'외투',bag:'가방'};
+
+  // 아이템별 앵커 — 이미지 내 신체 위치 비율
+  const anchors = {
+    hat:    { x:.5,   y:.07 },   // 머리
+    top:    { x:.65,  y:.32 },   // 가슴 우측
+    outer:  { x:.3,   y:.38 },   // 가슴 좌측 (top과 좌우 분리)
+    bottom: { x:.35,  y:.65 },   // 허리 좌측
+    shoes:  { x:.55,  y:.92 },   // 발 우측
+    bag:    { x:.25,  y:.55 },   // 왼쪽 옆구리
+  };
+
+  // 각 아이템을 이미지 바깥 좌/우 중 공간 더 넓은 쪽에 배치
+  // 왼쪽 공간, 오른쪽 공간 계산
+  const leftSpace  = iLeft;                          // 이미지 왼쪽 공간
+  const rightSpace = canvasRect.width - (iLeft+iW);  // 이미지 오른쪽 공간
+  const THUMB = 52;
+  const MIN_LINE = 20;
+  const MAX_LINE = 80;
+
+  // 아이템별로 어느 쪽에 배치할지 결정 (공간 + 자연스러운 위치)
+  const forceRight = ['hat','top','shoes'];   // 오른쪽 선호
+  const forceLeft  = ['outer','bottom','bag']; // 왼쪽 선호
+
+  activeItems.forEach(([key, slot])=>{
+    const anchor = anchors[key] || {x:.5, y:.5};
+    // 점의 좌표 (이미지 내 상대위치 → canvas 절대위치)
+    const dotX = iLeft + iW * anchor.x;
+    const dotY = iTop  + iH * anchor.y;
+
+    // 배치 방향 결정
+    let isRight = forceRight.includes(key);
+    // 공간 부족하면 반대로
+    if(isRight && rightSpace < THUMB + MIN_LINE + 4) isRight = false;
+    if(!isRight && leftSpace  < THUMB + MIN_LINE + 4) isRight = true;
+
+    // 선 길이: 점에서 이미지 끝까지 + 여유
+    const lineLen = isRight
+      ? Math.min(MAX_LINE, Math.max(MIN_LINE, rightSpace - THUMB - 8))
+      : Math.min(MAX_LINE, Math.max(MIN_LINE, leftSpace  - THUMB - 8));
+
+    const totalW = THUMB + lineLen;
+
+    // --- DOM 구성 ---
+    const tag = document.createElement('div');
+    tag.style.cssText = `
+      position:absolute;
+      display:flex;
+      align-items:center;
+      gap:0;
+      pointer-events:auto;
+      cursor:pointer;
+      width:${totalW}px;
+      top:${dotY - THUMB/2}px;
+    `;
+    if(isRight) tag.style.left  = dotX + 'px';
+    else        tag.style.right = (canvasRect.width - dotX) + 'px';
+
+    // 클릭 → 옷장 저장
+    tag.title = '클릭하면 옷장에 저장';
+    tag.onclick = () => quickSaveToWardrobe(key, slot);
+
+    // hover 효과
+    tag.onmouseenter = () => { thumb.style.borderColor='rgba(200,255,0,.6)'; thumb.style.transform='scale(1.08)'; };
+    tag.onmouseleave = () => { thumb.style.borderColor='rgba(255,255,255,.12)'; thumb.style.transform='scale(1)'; };
+
+    // 점
+    const dot = document.createElement('div');
+    dot.style.cssText = `
+      width:8px;height:8px;border-radius:50%;
+      background:white;border:2px solid rgba(255,255,255,.4);
+      flex-shrink:0;
+      box-shadow:0 0 6px rgba(255,255,255,.5);
+    `;
+
+    // 선
+    const line = document.createElement('div');
+    line.style.cssText = `
+      height:1px;
+      background:linear-gradient(${isRight?'90deg':'270deg'},rgba(255,255,255,.5),rgba(255,255,255,.15));
+      flex:1;
+    `;
+
+    // 썸네일
+    const thumb = document.createElement('img');
+    thumb.src = slot.data;
+    thumb.style.cssText = `
+      width:${THUMB}px;height:${THUMB}px;
+      border-radius:8px;object-fit:contain;
+      background:rgba(15,15,15,.92);
+      border:1.5px solid rgba(255,255,255,.12);
+      box-shadow:0 4px 14px rgba(0,0,0,.6);
+      flex-shrink:0;
+      transition:border-color .2s, transform .2s;
+    `;
+
+    // 라벨
+    const label = document.createElement('div');
+    const itemName = (slot.name||'').replace(/\.[^.]+$/,'') || catNames[key];
+    label.textContent = itemName;
+    label.style.cssText = `
+      position:absolute;
+      font-size:.52rem;color:rgba(255,255,255,.55);
+      white-space:nowrap;letter-spacing:.04em;
+      ${isRight ? 'right:0;' : 'left:0;'}
+      bottom:-1rem;
+    `;
+
+    // 저장 힌트
+    const hint = document.createElement('div');
+    hint.textContent = '+ 옷장';
+    hint.style.cssText = `
+      position:absolute;
+      font-size:.5rem;color:rgba(200,255,0,.7);
+      white-space:nowrap;
+      ${isRight ? 'right:0;' : 'left:0;'}
+      bottom:-1.85rem;
+      opacity:0;transition:opacity .2s;
+    `;
+    tag.onmouseenter = () => {
+      thumb.style.borderColor='rgba(200,255,0,.6)';
+      thumb.style.transform='scale(1.08)';
+      hint.style.opacity='1';
+    };
+    tag.onmouseleave = () => {
+      thumb.style.borderColor='rgba(255,255,255,.12)';
+      thumb.style.transform='scale(1)';
+      hint.style.opacity='0';
+    };
+
+    if(isRight){
+      tag.appendChild(dot);
+      tag.appendChild(line);
+      tag.appendChild(thumb);
+    } else {
+      tag.appendChild(thumb);
+      tag.appendChild(line);
+      tag.appendChild(dot);
+    }
+    tag.appendChild(label);
+    tag.appendChild(hint);
+    wrap.appendChild(tag);
+  });
+}
+
+// 태그에서 바로 옷장 저장
+function quickSaveToWardrobe(cat, slot){
+  const catNames = {hat:'모자',top:'상의',bottom:'하의',shoes:'신발',outer:'외투',bag:'가방'};
+  const defaultName = catNames[cat];
+  const name = prompt('아이템 이름을 입력하세요', (slot.name||'').replace(/\.[^.]+$/,'') || defaultName);
+  if(name === null) return;
+  const finalName = name.trim() || defaultName;
+  const wardrobe = JSON.parse(localStorage.getItem('fitai_wardrobe')||'{}');
+  if(!wardrobe[cat]) wardrobe[cat] = [];
+  const isDup = wardrobe[cat].some(i=>i.data===slot.data);
+  if(isDup){ toast('이미 저장된 아이템입니다', false); return; }
+  wardrobe[cat].unshift({id:Date.now()+'_'+cat, name:finalName, data:slot.data, savedAt:new Date().toISOString()});
+  localStorage.setItem('fitai_wardrobe', JSON.stringify(wardrobe));
+  renderWardrobe();
+  toast('"'+finalName+'" 옷장에 저장됐습니다 👗', true);
+}
+
+// ════ 히스토리 토글 ════
+let historyOpen = false;
+function toggleHistory(){
+  historyOpen = !historyOpen;
+  const panel = document.getElementById('codi-history-panel');
+  panel.style.transform = historyOpen ? 'translateX(0)' : 'translateX(100%)';
+}
+
+// ════ 유틸 ════
+function toast(msg,ok){const t=document.getElementById('toast');t.textContent=msg;t.className='toast '+(ok?'ok':'er');t.classList.add('sh');setTimeout(()=>t.classList.remove('sh'),3000);}
+
+// ════ 초기화 ════
+(function init(){
+  const saved=localStorage.getItem('fitai_profile');
+  if(saved){
+    profile={...profile,...JSON.parse(saved)};
+    // 저장된 프로필 있으면 온보딩 스킵
+    document.getElementById('onboard').style.display='none';
+    document.getElementById('app').classList.add('show');
+    refreshProfile(); renderWardrobe(); renderCodiList(); renderCodiHistory();
+    const key=localStorage.getItem('fitai_oai_key');
+    if(key){document.getElementById('api-inp').value=key;setApiInd(true);}
+  }
+})();
+</script>
+</body>
+</html>
